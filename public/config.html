@@ -10,49 +10,45 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             margin: 20px;
             color: #252424;
-        }
-        .container {
-            max-width: 600px;
-            margin: 0 auto;
             text-align: center;
         }
         h1 {
             font-size: 24px;
             margin-bottom: 20px;
         }
-        p {
+        button {
+            padding: 10px 20px;
             font-size: 16px;
-            color: #666;
-            margin-bottom: 20px;
+            background-color: #464775;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #2d2d4d;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Meeting Timer</h1>
-        <p>Click Save to add the timer to your meeting.</p>
-    </div>
+    <h1>Meeting Timer</h1>
+    <button onclick="saveConfig()">Add to Meeting</button>
 
     <script>
-        microsoftTeams.app.initialize().then(() => {
+        microsoftTeams.app.initialize();
+
+        function saveConfig() {
             microsoftTeams.pages.config.setValidityState(true);
-            
-            microsoftTeams.pages.config.registerOnSaveHandler((saveEvent) => {
-                microsoftTeams.pages.config.setConfig({
-                    entityId: 'timer',
-                    contentUrl: window.location.origin + '/teams-timer-app/',
-                    suggestedDisplayName: 'Meeting Timer',
-                    websiteUrl: window.location.origin + '/teams-timer-app/'
-                }).then(() => {
+            microsoftTeams.pages.config.setConfig({
+                entityId: 'timer',
+                contentUrl: window.location.origin + '/teams-timer-app/',
+                suggestedDisplayName: 'Meeting Timer'
+            }).then(() => {
+                microsoftTeams.pages.config.registerOnSaveHandler((saveEvent) => {
                     saveEvent.notifySuccess();
-                }).catch((error) => {
-                    console.error('Error saving configuration:', error);
-                    saveEvent.notifyFailure('Failed to save configuration');
                 });
             });
-        }).catch((error) => {
-            console.error('Error initializing Teams:', error);
-        });
+        }
     </script>
 </body>
 </html>
