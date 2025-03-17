@@ -39,67 +39,73 @@ function App() {
         await microsoftTeams.initialize();
         setIsTeamsInitialized(true);
 
-        // Get context using callback style
-        microsoftTeams.getContext((context) => {
-          console.log('Teams Context:', context);
-          
-          // If we're in the settings frame, save the settings and notify success
-          if (context.frameContext === 'settings') {
-            microsoftTeams.settings.setValidityState(true);
-            microsoftTeams.settings.registerOnSaveHandler((saveEvent) => {
-              microsoftTeams.settings.setConfig({
-                entityId: 'timer',
-                contentUrl: window.location.origin + window.location.pathname,
-                suggestedDisplayName: 'Meeting Timer'
+        // Get meeting context
+        await microsoftTeams.meeting.getMeetingDetails(async (details) => {
+          console.log('Meeting Details:', details);
+
+          // Get user context
+          microsoftTeams.getContext(async (context) => {
+            console.log('Teams Context:', context);
+            
+            // If we're in the settings frame, save the settings and notify success
+            if (context.frameContext === 'settings') {
+              microsoftTeams.settings.setValidityState(true);
+              microsoftTeams.settings.registerOnSaveHandler((saveEvent) => {
+                microsoftTeams.settings.setConfig({
+                  entityId: 'timer',
+                  contentUrl: window.location.origin + window.location.pathname,
+                  suggestedDisplayName: 'Meeting Timer'
+                });
+                saveEvent.notifySuccess();
               });
-              saveEvent.notifySuccess();
-            });
-            return;
-          }
-
-          // Store debug info
-          setDebugContext({
-            userId: context?.userObjectId || 'Not available',
-            organizerId: context?.meeting?.organizer?.id || 'Not available',
-            meetingId: context?.meeting?.id || 'Not available',
-            roles: context?.meeting?.roles || [],
-            capabilities: context?.app?.capabilities || [],
-            frameContext: context?.frameContext || 'Unknown',
-            initError: ''
-          });
-
-          // Get saved configuration
-          microsoftTeams.pages.getConfig().then((config) => {
-            console.log('Retrieved config:', config);
-            if (config?.userConfigs?.controlLevel) {
-              setControlLevel(config.userConfigs.controlLevel);
+              return;
             }
-          }).catch((error) => {
-            console.log('Error getting config:', error);
-          });
 
-          // Check if user is organizer
-          const isOrg = context?.userObjectId === context?.meeting?.organizer?.id;
-          setIsOrganizer(isOrg);
-          
-          // Determine user role and control permissions
-          if (isOrg) {
-            setHasTimerControl(true);
-            setUserRole('organizer');
-          } else if (context?.meeting?.role === 'Presenter') {
-            setUserRole('presenter');
-            setHasTimerControl(controlLevel === 'presenters' || controlLevel === 'all');
-          } else {
-            setUserRole('attendee');
-            setHasTimerControl(controlLevel === 'all');
-          }
+            // Store debug info
+            setDebugContext({
+              userId: context?.userObjectId || 'Not available',
+              organizerId: details?.organizer?.id || 'Not available',
+              meetingId: details?.id || 'Not available',
+              roles: details?.role ? [details.role] : [],
+              capabilities: context?.app?.capabilities || [],
+              frameContext: context?.frameContext || 'Unknown',
+              initError: ''
+            });
 
-          console.log('Role detection:', {
-            isOrganizer: isOrg,
-            meetingRole: context?.meeting?.role,
-            userId: context?.userObjectId,
-            organizerId: context?.meeting?.organizer?.id,
-            controlLevel
+            // Get saved configuration
+            try {
+              const config = await microsoftTeams.pages.config.getConfig();
+              console.log('Retrieved config:', config);
+              if (config?.userConfigs?.controlLevel) {
+                setControlLevel(config.userConfigs.controlLevel);
+              }
+            } catch (error) {
+              console.log('Error getting config:', error);
+            }
+
+            // Check if user is organizer
+            const isOrg = context?.userObjectId === details?.organizer?.id;
+            setIsOrganizer(isOrg);
+            
+            // Determine user role and control permissions
+            if (isOrg) {
+              setHasTimerControl(true);
+              setUserRole('organizer');
+            } else if (details?.role === 'presenter') {
+              setUserRole('presenter');
+              setHasTimerControl(controlLevel === 'presenters' || controlLevel === 'all');
+            } else {
+              setUserRole('attendee');
+              setHasTimerControl(controlLevel === 'all');
+            }
+
+            console.log('Role detection:', {
+              isOrganizer: isOrg,
+              meetingRole: details?.role,
+              userId: context?.userObjectId,
+              organizerId: details?.organizer?.id,
+              controlLevel
+            });
           });
         });
 
