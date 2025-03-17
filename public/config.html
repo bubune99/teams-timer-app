@@ -35,18 +35,27 @@
     <button onclick="saveConfig()">Add to Meeting</button>
 
     <script>
-        microsoftTeams.app.initialize();
-
-        function saveConfig() {
-            microsoftTeams.pages.config.setValidityState(true);
-            microsoftTeams.pages.config.setConfig({
-                entityId: 'timer',
-                contentUrl: window.location.origin + '/teams-timer-app/',
-                suggestedDisplayName: 'Meeting Timer'
-            }).then(() => {
-                microsoftTeams.pages.config.registerOnSaveHandler((saveEvent) => {
+        (async function() {
+            try {
+                await microsoftTeams.app.initialize();
+                microsoftTeams.pages.config.registerOnSaveHandler(async (saveEvent) => {
+                    microsoftTeams.pages.config.setConfig({
+                        websiteUrl: window.location.origin + '/teams-timer-app/',
+                        contentUrl: window.location.origin + '/teams-timer-app/',
+                        entityId: 'timer',
+                        suggestedDisplayName: 'Meeting Timer'
+                    });
                     saveEvent.notifySuccess();
                 });
+                microsoftTeams.pages.config.setValidityState(true);
+            } catch (error) {
+                console.error('Error initializing:', error);
+            }
+        })();
+
+        function saveConfig() {
+            microsoftTeams.pages.config.registerOnSaveHandler(async (saveEvent) => {
+                saveEvent.notifySuccess();
             });
         }
     </script>

@@ -11,10 +11,16 @@ function App() {
   const [inputSeconds, setInputSeconds] = useState('');
 
   useEffect(() => {
-    // Initialize Teams
-    if (window.parent !== window.self) {
-      microsoftTeams.initialize();
-    }
+    const initTeams = async () => {
+      try {
+        await microsoftTeams.app.initialize();
+        microsoftTeams.app.notifySuccess();
+      } catch (err) {
+        console.error('Teams initialization error:', err);
+      }
+    };
+
+    initTeams();
   }, []);
 
   useEffect(() => {
