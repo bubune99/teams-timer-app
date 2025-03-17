@@ -86,15 +86,21 @@ function App() {
           if (isOrg) {
             setHasTimerControl(true);
             setUserRole('organizer');
-          } else if (context?.meeting?.isPresenter) {
+          } else if (context?.meeting?.role === 'Presenter') {
             setUserRole('presenter');
-            // Check if presenters have control based on settings
             setHasTimerControl(controlLevel === 'presenters' || controlLevel === 'all');
           } else {
             setUserRole('attendee');
-            // Check if all participants have control
             setHasTimerControl(controlLevel === 'all');
           }
+
+          console.log('Role detection:', {
+            isOrganizer: isOrg,
+            meetingRole: context?.meeting?.role,
+            userId: context?.userObjectId,
+            organizerId: context?.meeting?.organizer?.id,
+            controlLevel
+          });
         });
 
       } catch (err) {
@@ -214,6 +220,21 @@ function App() {
     }
   };
 
+  const getPermissionMessage = () => {
+    if (!isTeamsInitialized) return '';
+    
+    switch (controlLevel) {
+      case 'organizer':
+        return "Only the meeting organizer can control the timer.";
+      case 'presenters':
+        return "Only the meeting organizer and presenters can control the timer.";
+      case 'all':
+        return "All participants can control the timer.";
+      default:
+        return "You don't have permission to control the timer.";
+    }
+  };
+
   if (error) {
     return (
       <div className="app-container">
@@ -297,7 +318,7 @@ function App() {
               </div>
             </div>
           ) : (
-            <Text size="small" content="You don't have permission to control the timer. Only authorized users can control the timer." />
+            <Text size="small" content={getPermissionMessage()} />
           )}
 
           {isPaused && (
