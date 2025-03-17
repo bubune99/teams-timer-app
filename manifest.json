@@ -5,18 +5,18 @@
     "id": "11111111-2222-3333-4444-555555555555",
     "packageName": "com.teams.meetingtimer",
     "developer": {
-        "name": "Bubune Owusu",
-        "websiteUrl": "https://bubune99.github.io/teams-timer-app",
-        "privacyUrl": "https://bubune99.github.io/teams-timer-app/privacy.html",
-        "termsOfUseUrl": "https://bubune99.github.io/teams-timer-app/terms.html"
+        "name": "Teams Timer App",
+        "websiteUrl": "https://bubune99.github.io/teams-timer-app/",
+        "privacyUrl": "https://bubune99.github.io/teams-timer-app/",
+        "termsOfUseUrl": "https://bubune99.github.io/teams-timer-app/"
     },
     "name": {
-        "short": "Meeting Timer",
-        "full": "Meeting Timer for Teams Presentations"
+        "short": "Teams Timer",
+        "full": "Teams Meeting Timer"
     },
     "description": {
-        "short": "Timer for Teams meetings",
-        "full": "A presentation timer that allows meeting organizers to set, pause, and control countdown timers during meetings."
+        "short": "Timer app for Teams meetings",
+        "full": "A timer app that helps track time during Teams meetings"
     },
     "icons": {
         "color": "color.svg",
@@ -30,10 +30,6 @@
             "scopes": [
                 "groupchat",
                 "team"
-            ],
-            "context": [
-                "meetingSidePanel",
-                "meetingStage"
             ]
         }
     ],

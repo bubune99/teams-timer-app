@@ -14,10 +14,14 @@ function App() {
   const [error, setError] = useState(null);
   const [hasTimerControl, setHasTimerControl] = useState(false);
   const [userRole, setUserRole] = useState(null);
-  const [permissions, setPermissions] = useState({
-    organizerOnly: true,
-    presenters: false,
-    coorganizers: false
+  const [debugContext, setDebugContext] = useState({
+    userId: '',
+    organizerId: '',
+    meetingId: '',
+    roles: [],
+    capabilities: [],
+    frameContext: '',
+    initError: ''
   });
 
   useEffect(() => {
@@ -26,68 +30,64 @@ function App() {
         // Check if we're running in Teams
         if (window.parent === window.self) {
           console.log('Running outside of Teams - skipping Teams initialization');
+          setHasTimerControl(true);
           return;
         }
 
-        await microsoftTeams.app.initialize();
+        // Initialize Teams SDK
+        await microsoftTeams.initialize();
         setIsTeamsInitialized(true);
 
-        try {
-          // Get meeting context
-          const context = await microsoftTeams.meeting.getMeetingDetails();
-          console.log('Meeting context:', context);
+        // Get context using callback style
+        microsoftTeams.getContext((context) => {
+          console.log('Teams Context:', context);
           
-          // Get user context
-          const userContext = await microsoftTeams.app.getContext();
-          console.log('User context:', userContext);
-          
-          // Get configuration
-          const configContext = await microsoftTeams.pages.config.getConfig();
-          console.log('Config context:', configContext);
-          
-          if (configContext?.userConfigs) {
-            setPermissions(configContext.userConfigs);
+          // If we're in the settings frame, save the settings and notify success
+          if (context.frameContext === 'settings') {
+            microsoftTeams.settings.setValidityState(true);
+            microsoftTeams.settings.registerOnSaveHandler((saveEvent) => {
+              microsoftTeams.settings.setSettings({
+                entityId: 'timer',
+                contentUrl: window.location.origin + window.location.pathname,
+                suggestedDisplayName: 'Meeting Timer'
+              });
+              saveEvent.notifySuccess();
+            });
+            return;
           }
 
-          // Determine user's role
-          const isOrg = context.meeting?.organizer?.userId === userContext.user.id;
+          // Store debug info
+          setDebugContext({
+            userId: context?.userObjectId || 'Not available',
+            organizerId: context?.meeting?.organizer?.id || 'Not available',
+            meetingId: context?.meeting?.id || 'Not available',
+            roles: context?.meeting?.roles || [],
+            capabilities: context?.app?.capabilities || [],
+            frameContext: context?.frameContext || 'Unknown',
+            initError: ''
+          });
+
+          // Check if user is organizer
+          const isOrg = context?.userObjectId === context?.meeting?.organizer?.id;
           setIsOrganizer(isOrg);
           
-          const roles = context.meeting?.conversation?.roles || [];
-          const userRole = roles.find(role => role.user.id === userContext.user.id);
-          setUserRole(userRole?.role);
-
-          // Check if user has timer control permissions
-          const hasControl = isOrg || 
-            (!permissions.organizerOnly && (
-              (permissions.presenters && userRole?.role === 'Presenter') ||
-              (permissions.coorganizers && userRole?.role === 'Coorganizer')
-            ));
-          
-          setHasTimerControl(hasControl);
-        } catch (meetingError) {
-          console.log('Error getting meeting details:', meetingError);
-          // Don't throw error here, just log it and continue
-        }
-
-        // Register handlers
-        microsoftTeams.app.registerOnThemeChangeHandler((theme) => {
-          console.log('Theme changed:', theme);
+          // Set timer control for organizer
+          if (isOrg) {
+            setHasTimerControl(true);
+            setUserRole('organizer');
+          } else if (context?.meeting?.isPresenter) {
+            setHasTimerControl(true);
+            setUserRole('presenter');
+          }
         });
 
-        try {
-          await microsoftTeams.messages.registerMessageHandler("timerUpdate", (message) => {
-            if (message.timeLeft !== undefined) setTimeLeft(message.timeLeft);
-            if (message.isRunning !== undefined) setIsRunning(message.isRunning);
-            if (message.isPaused !== undefined) setIsPaused(message.isPaused);
-          });
-        } catch (messageError) {
-          console.log('Error registering message handler:', messageError);
-          // Don't throw error here, just log it and continue
-        }
       } catch (err) {
-        console.log('Teams initialization error:', err);
+        console.error('Teams initialization error:', err);
         setError(err.message);
+        setDebugContext(prev => ({
+          ...prev,
+          initError: err.message || 'Teams initialization error'
+        }));
       }
     };
 
@@ -209,88 +209,108 @@ function App() {
 
   return (
     <div className="app-container">
-      <Text size="large" weight="bold" content="Meeting Timer" />
-      
-      <div className={`timer-display ${timeLeft <= 30 && !isPaused ? 'timer-red' : ''}`}>
-        {formatTime(timeLeft)}
-      </div>
-
-      {(!isTeamsInitialized || hasTimerControl) ? (
-        <div className="controls">
-          <div className="time-inputs">
-            <div className="time-input-container">
-              <label htmlFor="minutes">Minutes</label>
-              <input
-                id="minutes"
-                type="number"
-                min="0"
-                placeholder="0"
-                value={inputMinutes}
-                onChange={(e) => handleInputChange(e.target.value, 'minutes')}
-                disabled={isRunning}
-              />
-            </div>
-            <div className="time-input-container">
-              <label htmlFor="seconds">Seconds</label>
-              <input
-                id="seconds"
-                type="number"
-                min="0"
-                max="59"
-                placeholder="0"
-                value={inputSeconds}
-                onChange={(e) => handleInputChange(e.target.value, 'seconds')}
-                disabled={isRunning}
-              />
-            </div>
-          </div>
-          
-          <div className="button-group">
-            <Button
-              primary
-              content={isRunning ? "Running..." : "Start Timer"}
-              onClick={startTimer}
-              disabled={isRunning || (!inputMinutes && !inputSeconds)}
-            />
-            {isRunning && (
-              <Button
-                content={isPaused ? "Resume" : "Pause"}
-                onClick={togglePause}
-                style={{
-                  backgroundColor: isPaused ? '#5cb85c' : '#f0ad4e',
-                  color: 'white'
-                }}
-              />
-            )}
-            <Button
-              content="Stop Timer"
-              onClick={stopTimer}
-              disabled={!isRunning}
-              style={{
-                backgroundColor: '#d9534f',
-                color: 'white'
-              }}
-            />
-          </div>
+      {debugContext.frameContext === 'settings' ? (
+        <div className="settings-container">
+          <Text size="large" weight="bold" content="Meeting Timer Configuration" />
+          <Text content="Click Save to add the timer to your meeting." />
         </div>
       ) : (
-        <Text size="small" content={
-          isOrganizer ? 
-            "Timer controls are currently restricted to specific roles. Update the app settings to modify permissions." :
-            "You don't have permission to control the timer. Only authorized users can control the timer."
-        } />
-      )}
+        <>
+          <Text size="large" weight="bold" content="Meeting Timer" />
+          
+          <div className={`timer-display ${timeLeft <= 30 && !isPaused ? 'timer-red' : ''}`}>
+            {formatTime(timeLeft)}
+          </div>
 
-      {isPaused && (
-        <div className="pause-indicator">
-          Timer Paused
-        </div>
-      )}
+          {(!isTeamsInitialized || hasTimerControl) ? (
+            <div className="controls">
+              <div className="time-inputs">
+                <div className="time-input-container">
+                  <label htmlFor="minutes">Minutes</label>
+                  <input
+                    id="minutes"
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    value={inputMinutes}
+                    onChange={(e) => handleInputChange(e.target.value, 'minutes')}
+                    disabled={isRunning}
+                  />
+                </div>
+                <div className="time-input-container">
+                  <label htmlFor="seconds">Seconds</label>
+                  <input
+                    id="seconds"
+                    type="number"
+                    min="0"
+                    max="59"
+                    placeholder="0"
+                    value={inputSeconds}
+                    onChange={(e) => handleInputChange(e.target.value, 'seconds')}
+                    disabled={isRunning}
+                  />
+                </div>
+              </div>
+              
+              <div className="button-group">
+                <Button
+                  primary
+                  content={isRunning ? "Running..." : "Start Timer"}
+                  onClick={startTimer}
+                  disabled={isRunning || (!inputMinutes && !inputSeconds)}
+                />
+                {isRunning && (
+                  <Button
+                    content={isPaused ? "Resume" : "Pause"}
+                    onClick={togglePause}
+                    style={{
+                      backgroundColor: isPaused ? '#5cb85c' : '#f0ad4e',
+                      color: 'white'
+                    }}
+                  />
+                )}
+                <Button
+                  content="Stop Timer"
+                  onClick={stopTimer}
+                  disabled={!isRunning}
+                  style={{
+                    backgroundColor: '#d9534f',
+                    color: 'white'
+                  }}
+                />
+              </div>
+            </div>
+          ) : (
+            <Text size="small" content="You don't have permission to control the timer. Only the meeting organizer and presenters can control the timer." />
+          )}
 
-      {hasTimerControl && (
-        <div className="role-indicator">
-          <Text size="small" content={`You have timer control as: ${isOrganizer ? 'Organizer' : userRole}`} />
-        </div>
+          {isPaused && (
+            <div className="pause-indicator">
+              Timer Paused
+            </div>
+          )}
+
+          {hasTimerControl && (
+            <div className="role-indicator">
+              <Text size="small" content={`You have timer control as: ${userRole}`} />
+            </div>
+          )}
+
+          <div className="debug-info" style={{ fontSize: '12px', color: '#666', marginTop: '20px' }}>
+            <p>Debug Info:</p>
+            <p>Is Organizer: {isOrganizer ? 'Yes' : 'No'}</p>
+            <p>Has Timer Control: {hasTimerControl ? 'Yes' : 'No'}</p>
+            <p>User Role: {userRole || 'Unknown'}</p>
+            <p>Teams Initialized: {isTeamsInitialized ? 'Yes' : 'No'}</p>
+            <p>User ID: {debugContext.userId}</p>
+            <p>Organizer ID: {debugContext.organizerId}</p>
+            <p>Meeting ID: {debugContext.meetingId}</p>
+            <p>Frame Context: {debugContext.frameContext}</p>
+            <p>Available Roles: {JSON.stringify(debugContext.roles)}</p>
+            <p>Capabilities: {JSON.stringify(debugContext.capabilities)}</p>
+            <p style={{ color: '#ff4444' }}>Initialization Error: {debugContext.initError || 'None'}</p>
+          </div>
+        </>
       )}
     </div>
   );
