@@ -23,30 +23,28 @@
         "full": "A simple timer app that can be used during Teams meetings"
     },
     "accentColor": "#FFFFFF",
+    "staticTabs": [
+        {
+            "entityId": "timer",
+            "name": "Meeting Timer",
+            "contentUrl": "https://bubune99.github.io/teams-timer-app/",
+            "websiteUrl": "https://bubune99.github.io/teams-timer-app/",
+            "scopes": [
+                "personal"
+            ]
+        }
+    ],
     "configurableTabs": [
         {
             "configurationUrl": "https://bubune99.github.io/teams-timer-app/config.html",
-            "canUpdateConfiguration": false,
+            "canUpdateConfiguration": true,
             "scopes": [
-                "groupchat",
-                "team"
-            ],
-            "context": [
-                "meetingSidePanel"
+                "team",
+                "groupchat"
             ]
         }
     ],
     "validDomains": [
         "bubune99.github.io"
-    ],
-    "authorization": {
-        "permissions": {
-            "resourceSpecific": [
-                {
-                    "name": "MeetingStage.Write",
-                    "type": "Delegated"
-                }
-            ]
-        }
-    }
+    ]
 }

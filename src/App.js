@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Flex, Text } from '@fluentui/react-northstar';
+import { Button, Text } from '@fluentui/react-northstar';
 import * as microsoftTeams from "@microsoft/teams-js";
 import './App.css';
 
@@ -11,16 +11,7 @@ function App() {
   const [inputSeconds, setInputSeconds] = useState('');
 
   useEffect(() => {
-    const initTeams = async () => {
-      try {
-        await microsoftTeams.app.initialize();
-        microsoftTeams.app.notifySuccess();
-      } catch (err) {
-        console.error('Teams initialization error:', err);
-      }
-    };
-
-    initTeams();
+    microsoftTeams.initialize();
   }, []);
 
   useEffect(() => {
