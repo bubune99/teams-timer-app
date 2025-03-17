@@ -14,125 +14,45 @@
         .container {
             max-width: 600px;
             margin: 0 auto;
+            text-align: center;
         }
         h1 {
             font-size: 24px;
             margin-bottom: 20px;
         }
-        .form-group {
+        p {
+            font-size: 16px;
+            color: #666;
             margin-bottom: 20px;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-        }
-        .radio-group {
-            margin-top: 8px;
-        }
-        .radio-group label {
-            display: flex;
-            align-items: center;
-            margin-bottom: 12px;
-            font-weight: normal;
-            cursor: pointer;
-        }
-        .radio-group input[type="radio"] {
-            margin-right: 8px;
-            cursor: pointer;
-        }
-        .info-text {
-            font-size: 14px;
-            color: #666;
-            margin-top: 4px;
-        }
-        #debug-info {
-            margin-top: 20px;
-            font-size: 12px;
-            color: #666;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Timer Settings</h1>
-        <div class="form-group">
-            <label>Who can control the timer?</label>
-            <div class="radio-group">
-                <label>
-                    <input type="radio" name="control" value="organizer" checked> Meeting organizer
-                </label>
-                <label>
-                    <input type="radio" name="control" value="presenters"> Meeting organizer and presenters
-                </label>
-                <label>
-                    <input type="radio" name="control" value="all"> All participants
-                </label>
-            </div>
-            <p class="info-text">Select who should be able to start, pause, and stop the timer during meetings.</p>
-        </div>
-        <div id="debug-info"></div>
+        <h1>Meeting Timer</h1>
+        <p>Click Save to add the timer to your meeting.</p>
     </div>
 
     <script>
-        async function initializeConfig() {
-            try {
-                await microsoftTeams.app.initialize();
-                microsoftTeams.pages.config.setValidityState(true);
-
-                // Get the radio buttons
-                const radioButtons = document.getElementsByName('control');
-                const debugInfo = document.getElementById('debug-info');
-                
-                // Try to get existing config
-                try {
-                    const config = await microsoftTeams.pages.config.getConfig();
-                    console.log('Current config:', config);
-                    debugInfo.innerHTML += '<p>Current config: ' + JSON.stringify(config) + '</p>';
-                    
-                    if (config?.userConfigs?.controlLevel) {
-                        const radio = Array.from(radioButtons).find(r => r.value === config.userConfigs.controlLevel);
-                        if (radio) radio.checked = true;
-                    }
-                } catch (error) {
-                    console.log('Error getting config:', error);
-                    debugInfo.innerHTML += '<p style="color: red">Error getting config: ' + error.message + '</p>';
-                }
-                
-                // Register save handler
-                microsoftTeams.pages.config.registerOnSaveHandler(async (saveEvent) => {
-                    try {
-                        // Get selected value
-                        const selectedValue = Array.from(radioButtons).find(r => r.checked)?.value || 'organizer';
-                        
-                        debugInfo.innerHTML += '<p>Saving config with value: ' + selectedValue + '</p>';
-                        
-                        // Save the settings
-                        await microsoftTeams.pages.config.setConfig({
-                            entityId: 'timer',
-                            contentUrl: window.location.origin + '/teams-timer-app/',
-                            suggestedDisplayName: 'Meeting Timer',
-                            websiteUrl: window.location.origin + '/teams-timer-app/',
-                            userConfigs: {
-                                controlLevel: selectedValue
-                            }
-                        });
-                        
-                        debugInfo.innerHTML += '<p style="color: green">Config saved successfully</p>';
-                        saveEvent.notifySuccess();
-                    } catch (error) {
-                        console.error('Error saving configuration:', error);
-                        debugInfo.innerHTML += '<p style="color: red">Error saving config: ' + error.message + '</p>';
-                        saveEvent.notifyFailure('Failed to save configuration: ' + error.message);
-                    }
+        microsoftTeams.app.initialize().then(() => {
+            microsoftTeams.pages.config.setValidityState(true);
+            
+            microsoftTeams.pages.config.registerOnSaveHandler((saveEvent) => {
+                microsoftTeams.pages.config.setConfig({
+                    entityId: 'timer',
+                    contentUrl: window.location.origin + '/teams-timer-app/',
+                    suggestedDisplayName: 'Meeting Timer',
+                    websiteUrl: window.location.origin + '/teams-timer-app/'
+                }).then(() => {
+                    saveEvent.notifySuccess();
+                }).catch((error) => {
+                    console.error('Error saving configuration:', error);
+                    saveEvent.notifyFailure('Failed to save configuration');
                 });
-            } catch (error) {
-                console.error('Error initializing Teams:', error);
-                document.getElementById('debug-info').innerHTML = '<p style="color: red">Error initializing Teams: ' + error.message + '</p>';
-            }
-        }
-
-        initializeConfig();
+            });
+        }).catch((error) => {
+            console.error('Error initializing Teams:', error);
+        });
     </script>
 </body>
 </html>
