@@ -1,15 +1,12 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
-import App from './App';
-import ErrorBoundary from './ErrorBoundary';
-import { Provider, teamsTheme } from '@fluentui/react-northstar';
+import { createRoot } from 'react-dom/client';
 import './index.css';
+import App from './App';
 
-ReactDOM.render(
-  <Provider theme={teamsTheme}>
-    <ErrorBoundary>
-      <App />
-    </ErrorBoundary>
-  </Provider>,
-  document.getElementById('root')
+const container = document.getElementById('root');
+const root = createRoot(container);
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
 );

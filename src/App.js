@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Text } from '@fluentui/react-northstar';
-import * as microsoftTeams from "@microsoft/teams-js";
 import './App.css';
 
 function App() {
@@ -9,10 +7,6 @@ function App() {
   const [isPaused, setIsPaused] = useState(false);
   const [inputMinutes, setInputMinutes] = useState('');
   const [inputSeconds, setInputSeconds] = useState('');
-
-  useEffect(() => {
-    microsoftTeams.initialize();
-  }, []);
 
   useEffect(() => {
     let timer;
@@ -62,7 +56,7 @@ function App() {
 
   return (
     <div className="app-container">
-      <Text size="large" weight="bold" content="Meeting Timer" />
+      <h1>Meeting Timer</h1>
       
       <div className={`timer-display ${timeLeft <= 30 && !isPaused ? 'timer-red' : ''}`}>
         {formatTime(timeLeft)}
@@ -89,34 +83,39 @@ function App() {
             placeholder="Sec"
             className="time-input"
           />
-          <Button
-            primary
-            content="Set"
+          <button
             onClick={handleSet}
             disabled={isRunning}
-          />
+            className="button primary"
+          >
+            Set
+          </button>
         </div>
 
         <div className="button-group">
           {!isRunning ? (
-            <Button
-              primary
-              content="Start"
+            <button
               onClick={handleStart}
               disabled={timeLeft === 0}
-            />
+              className="button primary"
+            >
+              Start
+            </button>
           ) : (
-            <Button
-              primary
-              content={isPaused ? "Resume" : "Pause"}
+            <button
               onClick={handlePause}
-            />
+              className="button primary"
+            >
+              {isPaused ? "Resume" : "Pause"}
+            </button>
           )}
-          <Button
-            content="Reset"
+          <button
             onClick={handleReset}
             disabled={timeLeft === 0 && !isRunning}
-          />
+            className="button"
+          >
+            Reset
+          </button>
         </div>
       </div>
 

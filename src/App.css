@@ -1,152 +1,86 @@
 .app-container {
-    padding: 20px;
-    text-align: center;
-    min-height: 100vh;
-    background-color: #f5f5f5;
-    max-width: 600px;
-    margin: 0 auto;
+  text-align: center;
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+h1 {
+  color: #252424;
+  margin-bottom: 20px;
 }
 
 .timer-display {
-    font-size: 64px;
-    font-weight: bold;
-    margin: 30px 0;
-    transition: color 0.3s ease;
-    font-family: monospace;
+  font-size: 48px;
+  font-weight: bold;
+  margin: 20px 0;
+  padding: 20px;
+  border-radius: 8px;
+  background-color: #f5f5f5;
 }
 
 .timer-red {
-    color: red;
+  color: #d13438;
 }
 
 .controls {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-    width: 100%;
-    max-width: 400px;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
 }
 
-.time-inputs {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    width: 100%;
+.input-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
-.time-input-container {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.time-input-container label {
-    font-size: 14px;
-    color: #666;
-    font-weight: 500;
-}
-
-input[type="number"] {
-    padding: 10px;
-    font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    width: 100%;
-    text-align: center;
-    -webkit-appearance: none;
-    -moz-appearance: textfield;
-    appearance: textfield;
-    background-color: #f8f9fa;
-}
-
-input[type="number"]:focus {
-    outline: none;
-    border-color: #0078d4;
-    box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.2);
-}
-
-/* Hide number input spinners */
-input[type="number"]::-webkit-inner-spin-button,
-input[type="number"]::-webkit-outer-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
+.time-input {
+  width: 60px;
+  padding: 8px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  text-align: center;
 }
 
 .button-group {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    gap: 10px;
-    width: 100%;
-    margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  gap: 10px;
 }
 
-button {
-    padding: 10px 20px;
-    font-size: 14px;
-    border-radius: 4px;
-    cursor: pointer;
-    border: none;
-    transition: all 0.2s ease;
-    font-weight: 500;
-    width: 100%;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.button {
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  background-color: #f0f0f0;
+  color: #252424;
 }
 
-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+.button:hover {
+  background-color: #e0e0e0;
 }
 
-.primary-button {
-    background-color: #0078d4;
-    color: white;
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.primary-button:hover:not(:disabled) {
-    background-color: #106ebe;
+.button.primary {
+  background-color: #464775;
+  color: white;
 }
 
-.pause-button {
-    background-color: #f0ad4e;
-    color: white;
-}
-
-.pause-button:hover:not(:disabled) {
-    background-color: #ec971f;
-}
-
-.resume-button {
-    background-color: #5cb85c;
-    color: white;
-}
-
-.resume-button:hover:not(:disabled) {
-    background-color: #449d44;
-}
-
-.stop-button {
-    background-color: #d9534f;
-    color: white;
-}
-
-.stop-button:hover:not(:disabled) {
-    background-color: #c9302c;
+.button.primary:hover {
+  background-color: #2d2d4d;
 }
 
 .pause-indicator {
-    margin-top: 20px;
-    padding: 10px 20px;
-    background-color: #f0ad4e;
-    color: white;
-    border-radius: 4px;
-    display: inline-block;
-    font-weight: 500;
+  margin-top: 20px;
+  color: #666;
+  font-style: italic;
 }
