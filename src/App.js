@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Flex, Text, Input } from '@fluentui/react-northstar';
+import { Button, Flex, Text } from '@fluentui/react-northstar';
 import * as microsoftTeams from "@microsoft/teams-js";
 import './App.css';
 
@@ -22,26 +22,41 @@ function App() {
           return;
         }
 
-        await microsoftTeams.initialize();
+        await microsoftTeams.app.initialize();
         setIsTeamsInitialized(true);
 
         // Check if user is meeting organizer
-        const context = await microsoftTeams.meeting.getMeetingDetails();
-        if (context.meeting?.organizer?.userId === context.user?.id) {
-          setIsOrganizer(true);
+        try {
+          const context = await microsoftTeams.meeting.getMeetingDetails();
+          console.log('Meeting context:', context);
+          
+          // Get current user's ID
+          const userContext = await microsoftTeams.app.getContext();
+          console.log('User context:', userContext);
+          
+          if (context.meeting?.organizer?.userId === userContext.user.id) {
+            setIsOrganizer(true);
+          }
+        } catch (meetingError) {
+          console.log('Error getting meeting details:', meetingError);
+          // Don't throw error here, just log it and continue
         }
 
         // Register handlers
-        microsoftTeams.teams.registerBeforeUnloadHandler((readyToUnload) => {
-          readyToUnload();
-          return true;
+        microsoftTeams.app.registerOnThemeChangeHandler((theme) => {
+          console.log('Theme changed:', theme);
         });
 
-        microsoftTeams.messages.registerHandler("timerUpdate", (message) => {
-          if (message.timeLeft !== undefined) setTimeLeft(message.timeLeft);
-          if (message.isRunning !== undefined) setIsRunning(message.isRunning);
-          if (message.isPaused !== undefined) setIsPaused(message.isPaused);
-        });
+        try {
+          await microsoftTeams.messages.registerMessageHandler("timerUpdate", (message) => {
+            if (message.timeLeft !== undefined) setTimeLeft(message.timeLeft);
+            if (message.isRunning !== undefined) setIsRunning(message.isRunning);
+            if (message.isPaused !== undefined) setIsPaused(message.isPaused);
+          });
+        } catch (messageError) {
+          console.log('Error registering message handler:', messageError);
+          // Don't throw error here, just log it and continue
+        }
       } catch (err) {
         console.log('Teams initialization error:', err);
         setError(err.message);
@@ -75,14 +90,26 @@ function App() {
 
   const broadcastTimerState = async (time, running, paused) => {
     try {
-      const participants = await microsoftTeams.meeting.getParticipants();
-      participants.forEach((participant) => {
-        microsoftTeams.messages.sendMessage("timerUpdate", {
-          timeLeft: time,
-          isRunning: running,
-          isPaused: paused
-        }, [participant.userId]);
-      });
+      if (!isTeamsInitialized) return;
+
+      const context = await microsoftTeams.meeting.getMeetingDetails();
+      const participants = context.conversation.conversationParticipants || [];
+      
+      for (const participant of participants) {
+        try {
+          await microsoftTeams.messages.sendMessage({
+            message: {
+              timeLeft: time,
+              isRunning: running,
+              isPaused: paused
+            },
+            messageTarget: "timerUpdate",
+            participantId: participant.user.id
+          });
+        } catch (err) {
+          console.log('Error sending message to participant:', err);
+        }
+      }
     } catch (err) {
       console.log('Error broadcasting timer state:', err);
     }
@@ -145,10 +172,10 @@ function App() {
 
   if (error) {
     return (
-      <Flex column padding="padding.medium">
+      <div className="app-container">
         <Text error content={`Error: ${error}`} />
         <Text content="The app will work with limited functionality." />
-      </Flex>
+      </div>
     );
   }
 
@@ -165,7 +192,7 @@ function App() {
           <div className="time-inputs">
             <div className="time-input-container">
               <label htmlFor="minutes">Minutes</label>
-              <Input
+              <input
                 id="minutes"
                 type="number"
                 min="0"
@@ -177,7 +204,7 @@ function App() {
             </div>
             <div className="time-input-container">
               <label htmlFor="seconds">Seconds</label>
-              <Input
+              <input
                 id="seconds"
                 type="number"
                 min="0"
