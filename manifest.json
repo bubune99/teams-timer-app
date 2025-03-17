@@ -3,26 +3,26 @@
     "manifestVersion": "1.14",
     "version": "1.0.0",
     "id": "11111111-2222-3333-4444-555555555555",
-    "packageName": "com.teams.meetingtimer",
+    "packageName": "com.microsoft.teams.extension",
     "developer": {
-        "name": "Teams Timer App",
-        "websiteUrl": "https://bubune99.github.io/teams-timer-app/",
-        "privacyUrl": "https://bubune99.github.io/teams-timer-app/",
-        "termsOfUseUrl": "https://bubune99.github.io/teams-timer-app/"
+        "name": "Teams App, Inc.",
+        "websiteUrl": "https://www.example.com",
+        "privacyUrl": "https://www.example.com/privacy",
+        "termsOfUseUrl": "https://www.example.com/termofuse"
     },
     "name": {
-        "short": "Teams Timer",
-        "full": "Teams Meeting Timer"
+        "short": "Meeting Timer",
+        "full": "Meeting Timer App"
     },
     "description": {
         "short": "Timer app for Teams meetings",
-        "full": "A timer app that helps track time during Teams meetings"
+        "full": "A simple timer app that can be used during Teams meetings"
     },
     "icons": {
-        "color": "color.svg",
-        "outline": "outline.svg"
+        "color": "color.png",
+        "outline": "outline.png"
     },
-    "accentColor": "#0078d4",
+    "accentColor": "#FFFFFF",
     "configurableTabs": [
         {
             "configurationUrl": "https://bubune99.github.io/teams-timer-app/config.html",
@@ -41,15 +41,5 @@
     ],
     "validDomains": [
         "bubune99.github.io"
-    ],
-    "authorization": {
-        "permissions": {
-            "resourceSpecific": [
-                {
-                    "name": "MeetingStage.Write.Chat",
-                    "type": "Delegated"
-                }
-            ]
-        }
-    }
+    ]
 }
