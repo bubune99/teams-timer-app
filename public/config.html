@@ -7,47 +7,147 @@
     <script src="https://res.cdn.office.net/teams-js/2.18.0/js/MicrosoftTeams.min.js"></script>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            margin: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
         }
         .container {
             max-width: 600px;
             margin: 0 auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        button {
-            background-color: #0078d4;
+        h1, h2 {
+            color: #333;
+            margin-top: 0;
+        }
+        p {
+            color: #666;
+            line-height: 1.5;
+        }
+        .button {
+            background-color: #464775;
             color: white;
             border: none;
             padding: 8px 16px;
             border-radius: 4px;
             cursor: pointer;
+            font-size: 14px;
             margin-top: 20px;
+        }
+        .button:hover {
+            background-color: #373860;
+        }
+        .settings-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+        }
+        .checkbox-container {
+            margin: 10px 0;
+        }
+        input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        label {
+            color: #444;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Meeting Timer Configuration</h1>
-        <p>Click Save to add the Meeting Timer to your meeting.</p>
-        <button onclick="saveConfig()">Save</button>
+        <p>Configure the Meeting Timer settings for your meeting.</p>
+
+        <div class="settings-section">
+            <h2>Timer Control Permissions</h2>
+            <p>Select who can control the timer in the meeting:</p>
+            
+            <div class="checkbox-container">
+                <input type="checkbox" id="organizerOnly" checked>
+                <label for="organizerOnly">Meeting Organizer Only</label>
+            </div>
+            
+            <div class="checkbox-container">
+                <input type="checkbox" id="presenters">
+                <label for="presenters">Allow Presenters to Control Timer</label>
+            </div>
+            
+            <div class="checkbox-container">
+                <input type="checkbox" id="coorganizers">
+                <label for="coorganizers">Allow Co-organizers to Control Timer</label>
+            </div>
+        </div>
+
+        <button id="saveButton" class="button">Save Settings</button>
     </div>
 
     <script>
-        microsoftTeams.initialize();
+        let config = {
+            organizerOnly: true,
+            presenters: false,
+            coorganizers: false
+        };
 
-        function saveConfig() {
-            microsoftTeams.pages.config.registerOnSaveHandler((saveEvent) => {
-                microsoftTeams.pages.config.setConfig({
-                    suggestedDisplayName: "Meeting Timer",
-                    contentUrl: window.location.origin + "/index.html",
-                    websiteUrl: window.location.origin
-                });
-                saveEvent.notifySuccess();
-            });
+        // Initialize checkboxes based on config
+        document.getElementById('organizerOnly').checked = config.organizerOnly;
+        document.getElementById('presenters').checked = config.presenters;
+        document.getElementById('coorganizers').checked = config.coorganizers;
+
+        // Handle checkbox changes
+        document.getElementById('organizerOnly').addEventListener('change', (e) => {
+            if (e.target.checked) {
+                document.getElementById('presenters').checked = false;
+                document.getElementById('coorganizers').checked = false;
+            }
+            updateConfig();
+        });
+
+        document.getElementById('presenters').addEventListener('change', (e) => {
+            if (e.target.checked) {
+                document.getElementById('organizerOnly').checked = false;
+            }
+            updateConfig();
+        });
+
+        document.getElementById('coorganizers').addEventListener('change', (e) => {
+            if (e.target.checked) {
+                document.getElementById('organizerOnly').checked = false;
+            }
+            updateConfig();
+        });
+
+        function updateConfig() {
+            config = {
+                organizerOnly: document.getElementById('organizerOnly').checked,
+                presenters: document.getElementById('presenters').checked,
+                coorganizers: document.getElementById('coorganizers').checked
+            };
         }
 
-        // Enable the save button
-        microsoftTeams.pages.config.setValidityState(true);
+        microsoftTeams.app.initialize().then(() => {
+            document.getElementById('saveButton').addEventListener('click', () => {
+                microsoftTeams.pages.config.registerOnSaveHandler((saveEvent) => {
+                    microsoftTeams.pages.config.setConfig({
+                        suggestedDisplayName: "Meeting Timer",
+                        contentUrl: window.location.origin + "/teams-timer-app/",
+                        websiteUrl: window.location.origin + "/teams-timer-app/",
+                        entityId: "timerConfig",
+                        userConfigs: config
+                    }).then(() => {
+                        saveEvent.notifySuccess();
+                    });
+                });
+
+                microsoftTeams.pages.config.setValidityState(true);
+            });
+        }).catch((error) => {
+            console.error("Error initializing Teams SDK:", error);
+        });
     </script>
 </body>
 </html>

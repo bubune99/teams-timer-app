@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Flex, Text, Input } from '@fluentui/react-northstar';
+import { Button, Flex, Text } from '@fluentui/react-northstar';
 import * as microsoftTeams from "@microsoft/teams-js";
 import './App.css';
 
@@ -12,6 +12,13 @@ function App() {
   const [isOrganizer, setIsOrganizer] = useState(false);
   const [isTeamsInitialized, setIsTeamsInitialized] = useState(false);
   const [error, setError] = useState(null);
+  const [hasTimerControl, setHasTimerControl] = useState(false);
+  const [userRole, setUserRole] = useState(null);
+  const [permissions, setPermissions] = useState({
+    organizerOnly: true,
+    presenters: false,
+    coorganizers: false
+  });
 
   useEffect(() => {
     const initializeTeams = async () => {
@@ -22,26 +29,62 @@ function App() {
           return;
         }
 
-        await microsoftTeams.initialize();
+        await microsoftTeams.app.initialize();
         setIsTeamsInitialized(true);
 
-        // Check if user is meeting organizer
-        const context = await microsoftTeams.meeting.getMeetingDetails();
-        if (context.meeting?.organizer?.userId === context.user?.id) {
-          setIsOrganizer(true);
+        try {
+          // Get meeting context
+          const context = await microsoftTeams.meeting.getMeetingDetails();
+          console.log('Meeting context:', context);
+          
+          // Get user context
+          const userContext = await microsoftTeams.app.getContext();
+          console.log('User context:', userContext);
+          
+          // Get configuration
+          const configContext = await microsoftTeams.pages.config.getConfig();
+          console.log('Config context:', configContext);
+          
+          if (configContext?.userConfigs) {
+            setPermissions(configContext.userConfigs);
+          }
+
+          // Determine user's role
+          const isOrg = context.meeting?.organizer?.userId === userContext.user.id;
+          setIsOrganizer(isOrg);
+          
+          const roles = context.meeting?.conversation?.roles || [];
+          const userRole = roles.find(role => role.user.id === userContext.user.id);
+          setUserRole(userRole?.role);
+
+          // Check if user has timer control permissions
+          const hasControl = isOrg || 
+            (!permissions.organizerOnly && (
+              (permissions.presenters && userRole?.role === 'Presenter') ||
+              (permissions.coorganizers && userRole?.role === 'Coorganizer')
+            ));
+          
+          setHasTimerControl(hasControl);
+        } catch (meetingError) {
+          console.log('Error getting meeting details:', meetingError);
+          // Don't throw error here, just log it and continue
         }
 
         // Register handlers
-        microsoftTeams.teams.registerBeforeUnloadHandler((readyToUnload) => {
-          readyToUnload();
-          return true;
+        microsoftTeams.app.registerOnThemeChangeHandler((theme) => {
+          console.log('Theme changed:', theme);
         });
 
-        microsoftTeams.messages.registerHandler("timerUpdate", (message) => {
-          if (message.timeLeft !== undefined) setTimeLeft(message.timeLeft);
-          if (message.isRunning !== undefined) setIsRunning(message.isRunning);
-          if (message.isPaused !== undefined) setIsPaused(message.isPaused);
-        });
+        try {
+          await microsoftTeams.messages.registerMessageHandler("timerUpdate", (message) => {
+            if (message.timeLeft !== undefined) setTimeLeft(message.timeLeft);
+            if (message.isRunning !== undefined) setIsRunning(message.isRunning);
+            if (message.isPaused !== undefined) setIsPaused(message.isPaused);
+          });
+        } catch (messageError) {
+          console.log('Error registering message handler:', messageError);
+          // Don't throw error here, just log it and continue
+        }
       } catch (err) {
         console.log('Teams initialization error:', err);
         setError(err.message);
@@ -57,7 +100,7 @@ function App() {
       timer = setInterval(() => {
         setTimeLeft((prevTime) => {
           const newTime = prevTime - 1;
-          if (isTeamsInitialized && isOrganizer) {
+          if (isTeamsInitialized && hasTimerControl) {
             broadcastTimerState(newTime, isRunning, isPaused);
           }
           return newTime;
@@ -66,23 +109,35 @@ function App() {
     } else if (timeLeft === 0) {
       setIsRunning(false);
       setIsPaused(false);
-      if (isTeamsInitialized && isOrganizer) {
+      if (isTeamsInitialized && hasTimerControl) {
         broadcastTimerState(0, false, false);
       }
     }
     return () => clearInterval(timer);
-  }, [isRunning, isPaused, timeLeft, isOrganizer, isTeamsInitialized]);
+  }, [isRunning, isPaused, timeLeft, hasTimerControl, isTeamsInitialized]);
 
   const broadcastTimerState = async (time, running, paused) => {
     try {
-      const participants = await microsoftTeams.meeting.getParticipants();
-      participants.forEach((participant) => {
-        microsoftTeams.messages.sendMessage("timerUpdate", {
-          timeLeft: time,
-          isRunning: running,
-          isPaused: paused
-        }, [participant.userId]);
-      });
+      if (!isTeamsInitialized) return;
+
+      const context = await microsoftTeams.meeting.getMeetingDetails();
+      const participants = context.conversation.conversationParticipants || [];
+      
+      for (const participant of participants) {
+        try {
+          await microsoftTeams.messages.sendMessage({
+            message: {
+              timeLeft: time,
+              isRunning: running,
+              isPaused: paused
+            },
+            messageTarget: "timerUpdate",
+            participantId: participant.user.id
+          });
+        } catch (err) {
+          console.log('Error sending message to participant:', err);
+        }
+      }
     } catch (err) {
       console.log('Error broadcasting timer state:', err);
     }
@@ -99,7 +154,7 @@ function App() {
       setIsPaused(false);
       setInputMinutes('');
       setInputSeconds('');
-      if (isTeamsInitialized && isOrganizer) {
+      if (isTeamsInitialized && hasTimerControl) {
         broadcastTimerState(newTime, true, false);
       }
     }
@@ -109,7 +164,7 @@ function App() {
     setIsRunning(false);
     setIsPaused(false);
     setTimeLeft(0);
-    if (isTeamsInitialized && isOrganizer) {
+    if (isTeamsInitialized && hasTimerControl) {
       broadcastTimerState(0, false, false);
     }
   };
@@ -117,7 +172,7 @@ function App() {
   const togglePause = () => {
     const newPausedState = !isPaused;
     setIsPaused(newPausedState);
-    if (isTeamsInitialized && isOrganizer) {
+    if (isTeamsInitialized && hasTimerControl) {
       broadcastTimerState(timeLeft, isRunning, newPausedState);
     }
   };
@@ -145,10 +200,10 @@ function App() {
 
   if (error) {
     return (
-      <Flex column padding="padding.medium">
+      <div className="app-container">
         <Text error content={`Error: ${error}`} />
         <Text content="The app will work with limited functionality." />
-      </Flex>
+      </div>
     );
   }
 
@@ -160,12 +215,12 @@ function App() {
         {formatTime(timeLeft)}
       </div>
 
-      {(!isTeamsInitialized || isOrganizer) ? (
+      {(!isTeamsInitialized || hasTimerControl) ? (
         <div className="controls">
           <div className="time-inputs">
             <div className="time-input-container">
               <label htmlFor="minutes">Minutes</label>
-              <Input
+              <input
                 id="minutes"
                 type="number"
                 min="0"
@@ -177,7 +232,7 @@ function App() {
             </div>
             <div className="time-input-container">
               <label htmlFor="seconds">Seconds</label>
-              <Input
+              <input
                 id="seconds"
                 type="number"
                 min="0"
@@ -219,12 +274,22 @@ function App() {
           </div>
         </div>
       ) : (
-        <Text size="small" content="Only the meeting organizer can control the timer" />
+        <Text size="small" content={
+          isOrganizer ? 
+            "Timer controls are currently restricted to specific roles. Update the app settings to modify permissions." :
+            "You don't have permission to control the timer. Only authorized users can control the timer."
+        } />
       )}
 
       {isPaused && (
         <div className="pause-indicator">
           Timer Paused
+        </div>
+      )}
+
+      {hasTimerControl && (
+        <div className="role-indicator">
+          <Text size="small" content={`You have timer control as: ${isOrganizer ? 'Organizer' : userRole}`} />
         </div>
       )}
     </div>
