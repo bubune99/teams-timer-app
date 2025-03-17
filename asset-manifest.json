@@ -1,13 +1,13 @@
 {
   "files": {
     "main.css": "/teams-timer-app/static/css/main.c3afb1a8.css",
-    "main.js": "/teams-timer-app/static/js/main.95d5bf64.js",
+    "main.js": "/teams-timer-app/static/js/main.a779ef12.js",
     "index.html": "/teams-timer-app/index.html",
     "main.c3afb1a8.css.map": "/teams-timer-app/static/css/main.c3afb1a8.css.map",
-    "main.95d5bf64.js.map": "/teams-timer-app/static/js/main.95d5bf64.js.map"
+    "main.a779ef12.js.map": "/teams-timer-app/static/js/main.a779ef12.js.map"
   },
   "entrypoints": [
     "static/css/main.c3afb1a8.css",
-    "static/js/main.95d5bf64.js"
+    "static/js/main.a779ef12.js"
   ]
 }
