@@ -19,8 +19,8 @@
         "full": "A simple timer app that can be used during Teams meetings"
     },
     "icons": {
-        "color": "color.png",
-        "outline": "outline.png"
+        "color": "color.svg",
+        "outline": "outline.svg"
     },
     "accentColor": "#FFFFFF",
     "configurableTabs": [
