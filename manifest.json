@@ -1,0 +1,61 @@
+{
+    "$schema": "https://developer.microsoft.com/en-us/json-schemas/teams/v1.14/MicrosoftTeams.schema.json",
+    "manifestVersion": "1.14",
+    "version": "1.0.0",
+    "id": "11111111-2222-3333-4444-555555555555",
+    "packageName": "com.teams.meetingtimer",
+    "developer": {
+        "name": "Your Organization",
+        "websiteUrl": "https://www.example.com",
+        "privacyUrl": "https://www.example.com/privacy",
+        "termsOfUseUrl": "https://www.example.com/terms"
+    },
+    "name": {
+        "short": "Meeting Timer",
+        "full": "Meeting Timer for Teams Presentations"
+    },
+    "description": {
+        "short": "Timer for Teams meetings",
+        "full": "A presentation timer that allows meeting organizers to set, pause, and control countdown timers during meetings."
+    },
+    "icons": {
+        "color": "color.svg",
+        "outline": "outline.svg"
+    },
+    "accentColor": "#0078d4",
+    "configurableTabs": [
+        {
+            "configurationUrl": "https://{{DOMAIN}}/config.html",
+            "canUpdateConfiguration": true,
+            "scopes": [
+                "groupchat",
+                "team"
+            ],
+            "context": [
+                "meetingSidePanel",
+                "meetingStage"
+            ]
+        }
+    ],
+    "permissions": [
+        "identity",
+        "messageTeamMembers"
+    ],
+    "validDomains": [
+        "{{DOMAIN}}"
+    ],
+    "authorization": {
+        "permissions": {
+            "resourceSpecific": [
+                {
+                    "name": "MeetingStage.Write.Chat",
+                    "type": "Delegated"
+                },
+                {
+                    "name": "ChannelMeetingStage.Write.Group",
+                    "type": "Delegated"
+                }
+            ]
+        }
+    }
+}
