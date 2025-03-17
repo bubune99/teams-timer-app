@@ -14,6 +14,7 @@ function App() {
   const [error, setError] = useState(null);
   const [hasTimerControl, setHasTimerControl] = useState(false);
   const [userRole, setUserRole] = useState(null);
+  const [controlLevel, setControlLevel] = useState('organizer');
   const [debugContext, setDebugContext] = useState({
     userId: '',
     organizerId: '',
@@ -46,7 +47,7 @@ function App() {
           if (context.frameContext === 'settings') {
             microsoftTeams.settings.setValidityState(true);
             microsoftTeams.settings.registerOnSaveHandler((saveEvent) => {
-              microsoftTeams.settings.setSettings({
+              microsoftTeams.settings.setConfig({
                 entityId: 'timer',
                 contentUrl: window.location.origin + window.location.pathname,
                 suggestedDisplayName: 'Meeting Timer'
@@ -67,17 +68,32 @@ function App() {
             initError: ''
           });
 
+          // Get saved configuration
+          microsoftTeams.pages.getConfig().then((config) => {
+            console.log('Retrieved config:', config);
+            if (config?.userConfigs?.controlLevel) {
+              setControlLevel(config.userConfigs.controlLevel);
+            }
+          }).catch((error) => {
+            console.log('Error getting config:', error);
+          });
+
           // Check if user is organizer
           const isOrg = context?.userObjectId === context?.meeting?.organizer?.id;
           setIsOrganizer(isOrg);
           
-          // Set timer control for organizer
+          // Determine user role and control permissions
           if (isOrg) {
             setHasTimerControl(true);
             setUserRole('organizer');
           } else if (context?.meeting?.isPresenter) {
-            setHasTimerControl(true);
             setUserRole('presenter');
+            // Check if presenters have control based on settings
+            setHasTimerControl(controlLevel === 'presenters' || controlLevel === 'all');
+          } else {
+            setUserRole('attendee');
+            // Check if all participants have control
+            setHasTimerControl(controlLevel === 'all');
           }
         });
 
@@ -92,7 +108,7 @@ function App() {
     };
 
     initializeTeams();
-  }, []);
+  }, [controlLevel]);
 
   useEffect(() => {
     let timer;
@@ -281,7 +297,7 @@ function App() {
               </div>
             </div>
           ) : (
-            <Text size="small" content="You don't have permission to control the timer. Only the meeting organizer and presenters can control the timer." />
+            <Text size="small" content="You don't have permission to control the timer. Only authorized users can control the timer." />
           )}
 
           {isPaused && (
@@ -301,6 +317,7 @@ function App() {
             <p>Is Organizer: {isOrganizer ? 'Yes' : 'No'}</p>
             <p>Has Timer Control: {hasTimerControl ? 'Yes' : 'No'}</p>
             <p>User Role: {userRole || 'Unknown'}</p>
+            <p>Control Level: {controlLevel}</p>
             <p>Teams Initialized: {isTeamsInitialized ? 'Yes' : 'No'}</p>
             <p>User ID: {debugContext.userId}</p>
             <p>Organizer ID: {debugContext.organizerId}</p>

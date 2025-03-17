@@ -28,8 +28,10 @@
             "configurationUrl": "https://bubune99.github.io/teams-timer-app/config.html",
             "canUpdateConfiguration": true,
             "scopes": [
-                "groupchat",
-                "team"
+                "groupchat"
+            ],
+            "context": [
+                "meetingSidePanel"
             ]
         }
     ],
@@ -45,10 +47,6 @@
             "resourceSpecific": [
                 {
                     "name": "MeetingStage.Write.Chat",
-                    "type": "Delegated"
-                },
-                {
-                    "name": "ChannelMeetingStage.Write.Group",
                     "type": "Delegated"
                 }
             ]

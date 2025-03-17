@@ -3,150 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meeting Timer Configuration</title>
-    <script src="https://res.cdn.office.net/teams-js/2.18.0/js/MicrosoftTeams.min.js"></script>
+    <title>Timer Configuration</title>
+    <script src="https://res.cdn.office.net/teams-js/2.19.0/js/MicrosoftTeams.min.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f5f5f5;
+            margin: 20px;
+            color: #252424;
         }
         .container {
             max-width: 600px;
             margin: 0 auto;
-            background-color: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-        h1, h2 {
-            color: #333;
-            margin-top: 0;
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
         }
-        p {
-            color: #666;
-            line-height: 1.5;
+        .form-group {
+            margin-bottom: 20px;
         }
-        .button {
-            background-color: #464775;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-top: 20px;
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
         }
-        .button:hover {
-            background-color: #373860;
+        .checkbox-group {
+            margin-top: 8px;
         }
-        .settings-section {
-            margin: 20px 0;
-            padding: 15px;
-            border: 1px solid #e0e0e0;
-            border-radius: 4px;
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: normal;
         }
-        .checkbox-container {
-            margin: 10px 0;
-        }
-        input[type="checkbox"] {
+        .checkbox-group input[type="radio"] {
             margin-right: 8px;
         }
-        label {
-            color: #444;
+        .info-text {
+            font-size: 14px;
+            color: #666;
+            margin-top: 4px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Meeting Timer Configuration</h1>
-        <p>Configure the Meeting Timer settings for your meeting.</p>
-
-        <div class="settings-section">
-            <h2>Timer Control Permissions</h2>
-            <p>Select who can control the timer in the meeting:</p>
-            
-            <div class="checkbox-container">
-                <input type="checkbox" id="organizerOnly" checked>
-                <label for="organizerOnly">Meeting Organizer Only</label>
+        <h1>Timer Settings</h1>
+        <div class="form-group">
+            <label>Who can control the timer?</label>
+            <div class="checkbox-group">
+                <label>
+                    <input type="radio" name="control" value="organizer" checked> Meeting organizer only
+                </label>
+                <label>
+                    <input type="radio" name="control" value="presenters"> Meeting organizer and presenters
+                </label>
+                <label>
+                    <input type="radio" name="control" value="all"> All participants
+                </label>
             </div>
-            
-            <div class="checkbox-container">
-                <input type="checkbox" id="presenters">
-                <label for="presenters">Allow Presenters to Control Timer</label>
-            </div>
-            
-            <div class="checkbox-container">
-                <input type="checkbox" id="coorganizers">
-                <label for="coorganizers">Allow Co-organizers to Control Timer</label>
-            </div>
+            <p class="info-text">Select who should be able to start, pause, and stop the timer during meetings.</p>
         </div>
-
-        <button id="saveButton" class="button">Save Settings</button>
     </div>
 
     <script>
-        let config = {
-            organizerOnly: true,
-            presenters: false,
-            coorganizers: false
-        };
-
-        // Initialize checkboxes based on config
-        document.getElementById('organizerOnly').checked = config.organizerOnly;
-        document.getElementById('presenters').checked = config.presenters;
-        document.getElementById('coorganizers').checked = config.coorganizers;
-
-        // Handle checkbox changes
-        document.getElementById('organizerOnly').addEventListener('change', (e) => {
-            if (e.target.checked) {
-                document.getElementById('presenters').checked = false;
-                document.getElementById('coorganizers').checked = false;
-            }
-            updateConfig();
-        });
-
-        document.getElementById('presenters').addEventListener('change', (e) => {
-            if (e.target.checked) {
-                document.getElementById('organizerOnly').checked = false;
-            }
-            updateConfig();
-        });
-
-        document.getElementById('coorganizers').addEventListener('change', (e) => {
-            if (e.target.checked) {
-                document.getElementById('organizerOnly').checked = false;
-            }
-            updateConfig();
-        });
-
-        function updateConfig() {
-            config = {
-                organizerOnly: document.getElementById('organizerOnly').checked,
-                presenters: document.getElementById('presenters').checked,
-                coorganizers: document.getElementById('coorganizers').checked
-            };
-        }
-
         microsoftTeams.app.initialize().then(() => {
-            document.getElementById('saveButton').addEventListener('click', () => {
-                microsoftTeams.pages.config.registerOnSaveHandler((saveEvent) => {
-                    microsoftTeams.pages.config.setConfig({
-                        suggestedDisplayName: "Meeting Timer",
-                        contentUrl: window.location.origin + "/teams-timer-app/",
-                        websiteUrl: window.location.origin + "/teams-timer-app/",
-                        entityId: "timerConfig",
-                        userConfigs: config
-                    }).then(() => {
-                        saveEvent.notifySuccess();
-                    });
+            microsoftTeams.app.notifySuccess();
+            
+            // Get the radio buttons
+            const radioButtons = document.getElementsByName('control');
+            
+            // Enable the save button when a selection is made
+            radioButtons.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    microsoftTeams.pages.config.setValidityState(true);
                 });
+            });
 
-                microsoftTeams.pages.config.setValidityState(true);
+            // Register save handler
+            microsoftTeams.pages.config.registerOnSaveHandler((saveEvent) => {
+                // Get selected value
+                const selectedValue = Array.from(radioButtons).find(r => r.checked)?.value || 'organizer';
+                
+                // Save the settings
+                microsoftTeams.pages.config.setConfig({
+                    entityId: 'timer',
+                    contentUrl: window.location.origin + '/teams-timer-app/',
+                    suggestedDisplayName: 'Meeting Timer',
+                    websiteUrl: window.location.origin + '/teams-timer-app/',
+                    userConfigs: {
+                        controlLevel: selectedValue
+                    }
+                }).then(() => {
+                    saveEvent.notifySuccess();
+                }).catch((error) => {
+                    console.error('Error saving configuration:', error);
+                    saveEvent.notifyFailure('Failed to save configuration');
+                });
             });
         }).catch((error) => {
-            console.error("Error initializing Teams SDK:", error);
+            console.error('Error initializing Teams:', error);
         });
     </script>
 </body>
